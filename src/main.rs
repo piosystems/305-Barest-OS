@@ -1,6 +1,6 @@
 #![no_std]
 #![no_main]
-//#![feature(core_intrinsics)] //feature here because is outside standard lib
+//#![feature(core_intrinsics)] //feature here because is outside standard lib. Works but not using it for now
 
 mod cursor;
 use cursor::*;
@@ -34,16 +34,18 @@ pub enum Colour {
     White = 15,
 }
 
+//constants for row and column size for VGA Text mode
 const BUFFER_HEIGHT: usize = 25;
 const BUFFER_WIDTH: usize = 80;
 
+///Function to write to a specific position and then display a blinking cursor after the last written character
 fn write_position(framebuffer: *mut u8, row: usize, column: usize, str: &str, foreground: Colour, background: Colour) {
     if row > BUFFER_HEIGHT - 1 {
         //TODO: implement scroll
         panic!("Row should be from 0 to 24")
     }
 
-    let initial_position = (row * BUFFER_WIDTH) + column;
+    let initial_position = (row * BUFFER_WIDTH) + column; //VGA positioning is linear even though the values may be give in x and y.
     
     let colour = || -> u8 {
         let fg = foreground as u8;
@@ -54,7 +56,7 @@ fn write_position(framebuffer: *mut u8, row: usize, column: usize, str: &str, fo
         bg | fg //combine
     };
 
-    
+    //iterate through str as bytes and write, taking off from initial_position.
     for (i, &byte) in str.as_bytes().iter().enumerate() {
         
         let count = i + initial_position;
@@ -85,13 +87,6 @@ fn write_position(framebuffer: *mut u8, row: usize, column: usize, str: &str, fo
 #[no_mangle]
 pub extern "C" fn _start() -> ! {
     let framebuffer = 0xb8000 as *mut u8; //The VGA text buffer is accessible via memory-mapped I/O to the address 0xb8000
-
-    /*for (i, &byte) in HELLO.iter().enumerate() {
-        unsafe {
-            *framebuffer.offset(i as isize * 2) = byte;
-            *framebuffer.offset(i as isize * 2 + 1) = 0xb; //write with light cyan colour. You can change this
-        }
-    }*/
 
     write_position(framebuffer, 1, 3, "Test string", Colour::LightBlue, Colour::Black);
 
